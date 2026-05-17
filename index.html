@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Immersive Ecocultural Game — Universitas Siliwangi</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── KONFIGURASI API KEY ──────────────────────────────────────────────────
+   Isi API key Anthropic Anda di bawah ini.
+   Dapatkan di: https://console.anthropic.com/settings/keys
+   ─────────────────────────────────────────────────────────────────────── */
+
+:root{
+  --ink:#22251F;--ink-soft:#4A4D44;--mist:#8B8E84;
+  --paper:#F4F1E8;--card:#FCFBF6;
+  --moss:#3E5C3A;--moss-d:#2A3F27;--moss-l:#7BA05B;--moss-xs:#E4ECDB;
+  --clay:#A65A3A;--clay-xs:#F3E4DA;
+  --gold:#B8893B;--gold-xs:#F3E9D4;
+  --sky:#3A5A78;--sky-xs:#DDE7EF;
+  --navy:#1E3A5F;--navy-xs:#E4EBF5;
+  --plum:#5B3A78;--plum-xs:#EDE4F5;
+  --rose:#9B3B47;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Outfit',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+.fr{font-family:'Fraunces',serif}
+.mn{font-family:'JetBrains Mono',monospace}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--moss-l);border-radius:4px}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+.fade{animation:fade .4s ease both}
+.card{background:var(--card);border:1px solid rgba(34,37,31,.08);border-radius:14px}
+textarea,input,button{font-family:'Outfit',sans-serif}
+button{cursor:pointer}
+#app{min-height:100vh}
+.screen{display:none}.screen.on{display:block}
+
+/* SETUP SCREEN */
+.setup-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.setup-box{background:var(--card);border:1px solid rgba(34,37,31,.1);border-radius:18px;padding:36px 40px;max-width:480px;width:100%;box-shadow:0 8px 40px rgba(27,67,50,.1)}
+.setup-logo{font-size:48px;margin-bottom:16px}
+.setup-title{font-size:24px;font-weight:600;margin-bottom:4px;color:var(--moss-d)}
+.setup-sub{font-size:13px;color:var(--mist);margin-bottom:24px;line-height:1.6}
+.setup-label{font-size:12px;font-weight:600;margin-bottom:6px;display:block;color:var(--ink-soft)}
+.setup-note{font-size:11px;color:var(--mist);margin-top:4px;margin-bottom:16px;line-height:1.5}
+.setup-input{width:100%;padding:11px 13px;border:1.5px solid rgba(34,37,31,.15);border-radius:9px;font-size:14px;background:#fff;color:var(--ink);outline:none;transition:border-color .15s;margin-bottom:4px}
+.setup-input:focus{border-color:var(--moss-l)}
+.setup-btn{width:100%;padding:13px;background:var(--moss);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;margin-top:8px;transition:background .15s}
+.setup-btn:hover{background:var(--moss-d)}
+.setup-err{font-size:12px;color:var(--rose);margin-top:6px;display:none}
+.setup-link{font-size:11px;color:var(--sky);text-decoration:none}
+.setup-link:hover{text-decoration:underline}
+
+/* LANDING */
+.hero{padding:36px 24px 28px;position:relative;overflow:hidden}
+.hero-title{font-size:32px;font-weight:600;line-height:1.2;color:#fff;margin-bottom:8px}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.72);line-height:1.65;max-width:520px}
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 24px 32px;max-width:860px;margin:0 auto}
+.pt-card{background:var(--card);border:1px solid rgba(34,37,31,.08);border-radius:16px;padding:18px 20px;cursor:pointer;transition:all .2s}
+.pt-card:hover{transform:translateY(-3px)}
+.pt-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 9px;border-radius:99px;margin-bottom:8px}
+.pt-name{font-size:17px;font-weight:600;margin-bottom:4px}
+.pt-desc{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-bottom:10px}
+.pt-chips{display:flex;flex-wrap:wrap;gap:5px}
+.pt-chip{font-size:10px;padding:2px 8px;border-radius:4px}
+
+/* KASUS LIST */
+.kl-header{padding:18px 24px 0;max-width:860px;margin:0 auto}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:6px 13px;border-radius:8px;border:none;margin-bottom:14px}
+.kasus-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kasus-card{background:var(--card);border:1px solid rgba(34,37,31,.08);border-radius:12px;padding:15px 17px;cursor:pointer;transition:all .2s}
+.kasus-card:hover{transform:translateY(-2px)}
+.kasus-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.kasus-loc{font-size:10px;margin-bottom:7px}
+.kasus-desc{font-size:12px;color:var(--ink-soft);line-height:1.55}
+.done-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:99px;float:right}
+
+/* GAME */
+.topbar{padding:11px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20}
+.prog-steps{display:flex;gap:5px}
+.prog-step{flex:1}
+.prog-fill{height:4px;border-radius:99px;transition:all .4s}
+.prog-label{font-size:8px;margin-top:2px;text-align:center}
+.feed{overflow-y:auto;padding:18px 20px 8px}
+.feed-inner{max-width:740px;margin:0 auto}
+
+.bubble-ai{background:var(--card);border:1px solid rgba(34,37,31,.08);border-radius:5px 14px 14px 14px;padding:16px 18px;margin-bottom:13px}
+.bubble-ai-lbl{font-size:9.5px;letter-spacing:.8px;margin-bottom:7px}
+.bubble-ai-text{font-size:13.5px;line-height:1.82;color:var(--ink)}
+.bubble-ai-text p{margin-bottom:8px}.bubble-ai-text p:last-child{margin-bottom:0}
+.bubble-user{display:flex;justify-content:flex-end;margin-bottom:13px}
+.bubble-user-inner{border-radius:14px 14px 5px 14px;padding:11px 15px;max-width:83%;font-size:13px;line-height:1.65;color:#fff;white-space:pre-line}
+.bubble-user-lbl{font-size:9px;opacity:.6;margin-bottom:4px;letter-spacing:.5px}
+
+.scaf-wrap{margin-bottom:13px}
+.scaf-hdr{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.scaf-badge{font-size:9px;font-weight:600;padding:3px 9px;border-radius:99px;color:#fff;letter-spacing:.5px}
+.scaf-note{font-size:11px;color:var(--mist);font-style:italic}
+.apr-box{border-radius:12px 12px 0 0;padding:12px 17px;border-left:3px solid var(--moss);background:var(--moss-xs)}
+.apr-lbl{font-size:9.5px;letter-spacing:.8px;margin-bottom:5px;color:var(--moss)}
+.apr-text{font-size:13px;line-height:1.7}
+.pen-box{background:var(--card);border:1px solid rgba(34,37,31,.08);border-top:none;padding:13px 17px}
+.pen-lbl{font-size:9.5px;letter-spacing:.8px;margin-bottom:6px}
+.pen-text{font-size:13.5px;line-height:1.82;color:var(--ink-soft)}
+
+.final-wrap{margin-bottom:13px;border-radius:14px;overflow:hidden}
+.final-skor{padding:16px 20px;color:#fff}
+.final-bar{height:6px;background:rgba(255,255,255,.22);border-radius:99px;margin-top:12px;overflow:hidden}
+.final-bar-fill{height:100%;background:#fff;border-radius:99px;transform-origin:left;animation:grow .9s ease both}
+.final-narasi{padding:14px 18px;background:var(--card);border:1px solid rgba(34,37,31,.08);border-top:none}
+.final-saran{padding:14px 18px;background:var(--gold-xs);border:1px solid rgba(184,137,59,.15);border-top:none;border-radius:0 0 14px 14px}
+.saran-row{display:flex;gap:8px;margin-bottom:7px;font-size:13px;line-height:1.6;color:#6B4A18}
+
+.bukti-wrap{background:var(--card);border:1px solid rgba(34,37,31,.08);border-radius:12px;padding:14px 17px;margin-bottom:11px}
+.bukti-item{display:flex;gap:9px;padding:9px 11px;border-radius:8px;border:1.5px solid;transition:all .14s;align-items:flex-start;margin-bottom:6px}
+.bukti-kode{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;color:#fff;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.bukti-teks{flex:1;font-size:12px;line-height:1.55;color:var(--ink)}
+.bukti-tag{font-size:9px;font-weight:600;text-transform:uppercase;flex-shrink:0;margin-top:2px;font-family:'JetBrains Mono',monospace}
+.tantangan-box{border-radius:11px;padding:12px 15px;margin-bottom:11px;border:1.5px solid}
+.input-wrap{background:var(--card);border:1px solid rgba(34,37,31,.08);border-radius:12px;padding:13px 15px}
+.input-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.input-hint{font-size:10.5px;color:var(--mist);margin-bottom:7px;line-height:1.45}
+textarea.ans{width:100%;padding:10px 12px;border:1.5px solid rgba(34,37,31,.14);border-radius:8px;font-size:13.5px;resize:vertical;background:#fff;color:var(--ink);min-height:110px;transition:border-color .15s;outline:none}
+textarea.ans:focus{border-color:var(--moss-l)}
+.input-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.char-counter{font-size:10px;font-family:'JetBrains Mono',monospace}
+.send-btn{padding:9px 22px;border-radius:8px;border:none;font-size:13px;font-weight:600;transition:all .15s}
+.selesai-box{background:var(--card);border:1px solid rgba(34,37,31,.08);border-radius:12px;padding:15px 18px;margin-bottom:13px}
+.loading-dots{display:flex;gap:5px;align-items:center;padding:10px 2px}
+.dot{width:7px;height:7px;border-radius:50%}
+.err-box{background:#FBEAEA;border:1px solid #E5B8B8;border-radius:10px;padding:12px 15px;font-size:13px;color:var(--rose);margin-bottom:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- SETUP: API KEY -->
+  <div id="sc-setup" class="screen" style="display:none">
+    <div class="setup-wrap">
+      <div class="setup-box">
+        <div class="setup-logo">🌿</div>
+        <div class="fr setup-title">Immersive Ecocultural Game</div>
+        <div class="setup-sub">Media Pembelajaran AIGC · Masalah Sosial & Pembangunan<br>S1 Pendidikan Masyarakat · Universitas Siliwangi</div>
+        <label class="setup-label">Anthropic API Key</label>
+        <input type="password" id="api-key-input" class="setup-input" placeholder="sk-ant-api03-..."/>
+        <div class="setup-note">
+          API key digunakan hanya di browser Anda dan tidak dikirim ke server lain.<br>
+          Dapatkan API key di <a href="https://console.anthropic.com/settings/keys" target="_blank" class="setup-link">console.anthropic.com</a>
+        </div>
+        <div id="setup-err" class="setup-err">API key tidak valid atau kosong. Pastikan diawali dengan "sk-ant-"</div>
+        <button class="setup-btn" onclick="submitApiKey()">Masuk ke Game →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LANDING -->
+  <div id="sc-landing" class="screen">
+    <div class="hero" style="background:linear-gradient(160deg,#2A3F27,#3E5C3A)">
+      <div style="position:absolute;right:-30px;top:-20px;font-size:180px;opacity:.07">🌿</div>
+      <div style="max-width:860px;margin:0 auto;position:relative">
+        <div class="mn" style="font-size:10px;letter-spacing:2.5px;color:#7BA05B;margin-bottom:10px">S1 PENDIDIKAN MASYARAKAT · UNIVERSITAS SILIWANGI</div>
+        <div class="fr hero-title">Immersive Ecocultural Game</div>
+        <p class="hero-sub">Media pembelajaran berbasis AI — simulasi masalah sosial & ekologi Priangan Timur. Pilih pertemuan, selidiki studi kasus, dan bangun kemampuan analisis serta evaluasi melalui scaffolding bertahap bersama Claude AI.</p>
+        <div style="display:flex;gap:20px;margin-top:18px">
+          <div><div class="fr" style="font-size:22px;font-weight:600;color:#7BA05B">4</div><div style="font-size:11px;color:rgba(255,255,255,.55)">Pertemuan</div></div>
+          <div><div class="fr" style="font-size:22px;font-weight:600;color:#7BA05B">24</div><div style="font-size:11px;color:rgba(255,255,255,.55)">Studi Kasus</div></div>
+          <div><div class="fr" style="font-size:22px;font-weight:600;color:#7BA05B">3×</div><div style="font-size:11px;color:rgba(255,255,255,.55)">Scaffolding</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pt-grid" id="pt-grid"></div>
+  </div>
+
+  <!-- KASUS LIST -->
+  <div id="sc-kasus" class="screen">
+    <div class="kl-header">
+      <button class="back-btn" onclick="goLanding()" style="background:#F0EDE4;color:var(--ink-soft)">← Pilih Pertemuan</button>
+      <div id="kl-pt-info"></div>
+    </div>
+    <div style="max-width:860px;margin:0 auto;padding:14px 24px 32px" id="kl-body"></div>
+  </div>
+
+  <!-- GAME -->
+  <div id="sc-game" class="screen" style="display:flex;flex-direction:column;min-height:100vh">
+    <div class="topbar" id="g-topbar">
+      <span id="g-icon" style="font-size:20px"></span>
+      <div style="flex:1">
+        <div class="fr" id="g-title" style="font-size:14px;font-weight:600;color:#fff"></div>
+        <div class="mn" id="g-sub" style="font-size:10px;color:rgba(255,255,255,.6)"></div>
+      </div>
+      <button onclick="backToKasus()" style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;padding:5px 12px;border-radius:7px;font-size:11px">← Daftar Kasus</button>
+    </div>
+    <div id="g-ind-banner" style="padding:8px 20px;border-bottom:1px solid rgba(0,0,0,.06)">
+      <div style="max-width:740px;margin:0 auto;font-size:12px" id="g-ind-text"></div>
+    </div>
+    <div id="g-prog" style="display:none;padding:8px 20px;border-bottom:1px solid rgba(34,37,31,.06);background:#fff">
+      <div style="max-width:740px;margin:0 auto;display:flex;align-items:center;gap:8px">
+        <span class="mn" style="font-size:9.5px;color:var(--mist);flex-shrink:0">PROSES BELAJAR</span>
+        <div class="prog-steps" style="flex:1" id="prog-steps"></div>
+      </div>
+    </div>
+    <div class="feed" id="g-feed" style="flex:1"><div class="feed-inner" id="g-feed-inner"></div></div>
+    <div style="padding:0 20px 16px"><div style="max-width:740px;margin:0 auto" id="g-input-area"></div></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+//  API KEY MANAGEMENT
+// ════════════════════════════════════════════════════════════════════════════
+let APIKEY = "";
+
+function submitApiKey(){
+  const val = document.getElementById("api-key-input").value.trim();
+  const err = document.getElementById("setup-err");
+  if(!val || !val.startsWith("sk-ant-")){ err.style.display="block"; return; }
+  err.style.display="none";
+  APIKEY = val;
+  showScreen("landing");
+  initLanding();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  DATA — 4 PERTEMUAN, 24 STUDI KASUS
+// ════════════════════════════════════════════════════════════════════════════
+const PERTEMUAN = [
+  {
+    id:"P4",num:"4",judul:"Faktor Penyebab Masalah Sosial",
+    subcpmk:"SubCPMK-2 · C4 Analisis",warna:"#3E5C3A",warnaLt:"#E4ECDB",icon:"🔍",
+    desc:"Latih kemampuan membedakan, mengorganisasi, dan mengatribusikan faktor-faktor penyebab masalah sosial melalui investigasi lapangan di Priangan Timur.",
+    chips:["Differentiating","Organizing","Attributing"],
+    indMeta:{
+      D:{nama:"Differentiating",w:"#3A5A78",xs:"#DDE7EF",desc:"Membedakan penyebab dari gejala"},
+      O:{nama:"Organizing",w:"#3E5C3A",xs:"#E4ECDB",desc:"Mengorganisasi faktor secara sistematis"},
+      A:{nama:"Attributing",w:"#A65A3A",xs:"#F3E4DA",desc:"Mengatribusikan akar penyebab terdalam"},
+    },
+    teori:"Soetomo (2013), Soekanto (2002), Kartini Kartono",
+    kasus:[
+      {id:"D1",ind:"D",judul:"Sampah yang Tak Kunjung Surut",lokasi:"Pangandaran",icon:"🏖️",
+       desc:"Volume sampah di pantai meningkat tajam. Tempat sampah tersedia, tapi masalah tetap ada.",
+       konteks:"Anda adalah tim Investigator Sosial yang diterjunkan ke kawasan wisata Pangandaran. Pemerintah daerah bingung — mereka sudah menyediakan tempat sampah, namun pantai tetap kotor.",
+       fokus:"Indikator Differentiating: mahasiswa membedakan FAKTOR PENYEBAB (akar) dari GEJALA (tanda permukaan). Sajikan 5-6 bukti dalam format [BUKTI] kode|teks yang mencampur penyebab dan gejala."},
+      {id:"D2",ind:"D",judul:"Sawah yang Berganti Rupa",lokasi:"Garut",icon:"🌾",
+       desc:"Alih fungsi lahan pertanian meningkat. Petani menjual tanah, investor membeli. Bedakan faktor struktural dari keputusan individu.",
+       konteks:"Anda adalah tim Investigator Sosial menyelidiki gelombang alih fungsi lahan pertanian di Garut. Banyak yang menyalahkan petani 'karena menjual tanahnya'.",
+       fokus:"Indikator Differentiating: membedakan FAKTOR STRUKTURAL (tekanan pasar, kebijakan) dari FAKTOR PERILAKU INDIVIDU (keputusan petani). Sajikan 5-6 bukti dalam format [BUKTI] kode|teks."},
+      {id:"O1",ind:"O",judul:"Banjir di Kota Kecil",lokasi:"Tasikmalaya",icon:"🌊",
+       desc:"Banjir berulang. Banyak faktor: drainase, alih fungsi lahan, kebiasaan warga, koordinasi pemerintah.",
+       konteks:"Anda memetakan penyebab banjir berulang di Tasikmalaya. Berbagai faktor sudah terkumpul namun masih berantakan dan butuh diorganisasi.",
+       fokus:"Indikator Organizing: mahasiswa MENGELOMPOKKAN faktor ke level analisis (individu/komunitas/infrastruktur/kebijakan). Sajikan data lapangan yang kaya."},
+      {id:"O2",ind:"O",judul:"Memudarnya Gotong Royong",lokasi:"Ciamis",icon:"🤝",
+       desc:"Tradisi kerja bakti meredup, lingkungan memburuk. Susun rantai sebab-akibat yang logis.",
+       konteks:"Anda menyelidiki melemahnya partisipasi warga menjaga lingkungan di Ciamis. Tradisi gotong royong yang dahulu kuat kini meredup.",
+       fokus:"Indikator Organizing: mahasiswa MENYUSUN RANTAI SEBAB-AKIBAT yang logis dan koheren antar variabel — bukan sekadar mendaftar faktor."},
+      {id:"A1",ind:"A",judul:"Sungai yang Kehilangan Penjaganya",lokasi:"Priangan Timur",icon:"🏞️",
+       desc:"Sungai tercemar, warga berhenti menjaga. Telusuri akar penyebab terdalam — bukan menyalahkan satu pihak.",
+       konteks:"Anda adalah tim Investigator Sosial senior yang menyimpulkan akar persoalan pencemaran sungai yang sudah berlangsung bertahun-tahun di Priangan Timur.",
+       fokus:"Indikator Attributing: mahasiswa MENYIMPULKAN AKAR PENYEBAB TERDALAM — multi-kausal, struktural, melampaui permukaan, terkait nilai budaya Sunda."},
+      {id:"A2",ind:"A",judul:"Ketika Wisata Mengubah Desa",lokasi:"Pangandaran",icon:"🎭",
+       desc:"Desa wisata makmur secara ekonomi, tapi solidaritas sosial dan nilai lokal memudar.",
+       konteks:"Anda menelaah paradoks desa wisata di Pangandaran: ekonomi tumbuh, namun keluhan warga tentang 'desa yang tak lagi sama' justru meningkat.",
+       fokus:"Indikator Attributing: mahasiswa MENGATRIBUSIKAN akar perubahan pada keterkaitan orientasi ekonomi baru dan melemahnya nilai budaya Sunda (gotong royong, kebersamaan)."},
+    ]
+  },
+  {
+    id:"P5",num:"5",judul:"Dampak Masalah Sosial",
+    subcpmk:"SubCPMK-2 · C4 Analisis",warna:"#7B4F2E",warnaLt:"#F3E4DA",icon:"🗺️",
+    desc:"Latih kemampuan memetakan dampak multi-dimensi masalah sosial — dari dampak jangka pendek/panjang, dampak berdasarkan posisi sosial, hingga dampak berantai tersembunyi.",
+    chips:["Dampak Jk Pendek/Panjang","Posisi Sosial","Multi-Dimensi"],
+    indMeta:{
+      D3:{nama:"Differentiating Dampak",w:"#7B4F2E",xs:"#F3E4DA",desc:"Membedakan dampak jangka pendek vs panjang"},
+      D4:{nama:"Differentiating Posisi",w:"#5B3A78",xs:"#EDE4F5",desc:"Membedakan dampak berdasarkan posisi sosial"},
+      O3:{nama:"Organizing Multi-Dimensi",w:"#1E3A5F",xs:"#E4EBF5",desc:"Mengorganisasi dampak ke dimensi yang tepat"},
+    },
+    teori:"Ife (1995), Suharto (2006), Adi (2003)",
+    kasus:[
+      {id:"D3a",ind:"D3",judul:"Sawah Berubah, Hidup Berubah",lokasi:"Garut Selatan",icon:"🌾",
+       desc:"3.200 hektar sawah dikonversi jadi kawasan industri. Ada dampak yang segera terlihat, ada yang baru muncul bertahun kemudian.",
+       konteks:"Anda adalah Analis Dampak BAPPEDA yang menelaah konsekuensi konversi lahan sawah di Garut Selatan. Petani kehilangan mata pencaharian. Dampaknya berlapis.",
+       fokus:"Indikator Differentiating Dampak: mahasiswa membedakan DAMPAK JANGKA PENDEK (segera terlihat) dari DAMPAK JANGKA PANJANG (laten, muncul bertahun kemudian). Sajikan berbagai dampak yang bercampur — sebagian dalam format [BUKTI] kode|teks."},
+      {id:"D3b",ind:"D3",judul:"Pabrik Datang, Sungai Berubah",lokasi:"Bandung Selatan",icon:"🏭",
+       desc:"Pabrik tekstil beroperasi di tepi Sungai Citarum. Ada yang segera terdampak, ada yang belum menyadari.",
+       konteks:"Anda adalah analis dampak yang memetakan konsekuensi operasi pabrik tekstil di tepi Sungai Citarum. Temukan mana dampak yang langsung vs yang bersifat akumulatif.",
+       fokus:"Indikator Differentiating Dampak: membedakan dampak langsung (segera) dari dampak tidak langsung (jangka panjang, akumulatif). Sajikan bukti konkret dalam format [BUKTI] kode|teks."},
+      {id:"D4a",ind:"D4",judul:"Wisata Tumbuh, Siapa Untung?",lokasi:"Pangandaran",icon:"🌊",
+       desc:"Kawasan wisata berkembang pesat. Tapi dampaknya berbeda-beda tergantung posisi sosial warga.",
+       konteks:"Anda menganalisis distribusi dampak pembangunan wisata di Pangandaran. Pemilik modal, nelayan kecil, pedagang informal, dan perempuan desa masing-masing mengalami realita berbeda.",
+       fokus:"Indikator Differentiating Posisi Sosial: membedakan dampak berdasarkan POSISI SOSIAL berbeda. Sajikan profil beberapa tokoh dengan posisi sosial berbeda dalam format [BUKTI] kode|teks."},
+      {id:"D4b",ind:"D4",judul:"Ketika Air Bersih Menjadi Langka",lokasi:"Tasikmalaya",icon:"💧",
+       desc:"Sumber air bersama mulai mengering. Tapi tidak semua warga merasakan dampak yang sama.",
+       konteks:"Anda menelaah dampak kelangkaan air bersih di sebuah desa di Tasikmalaya. Warga kaya punya sumur bor, warga miskin bergantung sumber komunal yang mengering.",
+       fokus:"Indikator Differentiating Posisi Sosial: dampak yang sama pada sumber daya alam dirasakan berbeda berdasarkan akses ekonomi dan posisi sosial. Sajikan data dalam format [BUKTI] kode|teks."},
+      {id:"O3a",ind:"O3",judul:"Ketika Hutan Habis",lokasi:"Pangandaran",icon:"🌳",
+       desc:"Deforestasi di kawasan perbukitan. Dampaknya merambat ke berbagai dimensi kehidupan warga.",
+       konteks:"Anda memetakan dampak deforestasi di kawasan perbukitan Pangandaran. Ada dampak ekonomi, sosial, budaya, ekologi, dan psikologis — semua bercampur dan harus diorganisasi.",
+       fokus:"Indikator Organizing Multi-Dimensi: mahasiswa MENGELOMPOKKAN dampak ke dalam dimensi: ekonomi / sosial / budaya / ekologi / psikologis. Bukan hanya menyebut, tapi menyusun secara sistematis."},
+      {id:"O3b",ind:"O3",judul:"Bencana Banjir, Luka Berlapis",lokasi:"Ciamis",icon:"🌊",
+       desc:"Banjir tahunan semakin parah. Dampaknya tidak hanya kerusakan fisik — ada luka sosial, budaya, dan psikologis.",
+       konteks:"Anda menganalisis total dampak banjir berulang di Ciamis. Masyarakat melaporkan berbagai kerugian — dari ekonomi hingga trauma psikologis dan memudarnya praktik budaya lokal.",
+       fokus:"Indikator Organizing Multi-Dimensi: susun dampak banjir ke dalam matriks dimensi yang lengkap. Hargai bahwa dampak budaya dan psikologis sama pentingnya dengan ekonomi."},
+    ]
+  },
+  {
+    id:"P6",num:"6",judul:"Evaluasi Kebijakan Pembangunan",
+    subcpmk:"SubCPMK-3 · C5 Evaluasi",warna:"#1E3A5F",warnaLt:"#E4EBF5",icon:"⚖️",
+    desc:"Latih kemampuan memeriksa konsistensi internal kebijakan dan mengkritisi kelayakannya berdasarkan 5 kriteria evaluasi: relevansi, efektivitas, efisiensi, keberlanjutan, dan keadilan.",
+    chips:["Checking Konsistensi","Output vs Outcome","5 Kriteria Evaluasi"],
+    indMeta:{
+      Ch1:{nama:"Checking Konsistensi",w:"#1E3A5F",xs:"#E4EBF5",desc:"Memeriksa konsistensi internal kebijakan"},
+      Ch2:{nama:"Checking Output-Outcome",w:"#3E5C3A",xs:"#E4ECDB",desc:"Memeriksa ketepatan indikator keberhasilan"},
+      Cr1:{nama:"Critiquing Kelayakan",w:"#7B4F2E",xs:"#F3E4DA",desc:"Mengkritisi kelayakan sosial-ekologis kebijakan"},
+    },
+    teori:"Friedmann (1992), Wiryanto (1973), Cohen (1964)",
+    kasus:[
+      {id:"Ch1a",ind:"Ch1",judul:"ProKlim yang Bermasalah",lokasi:"Desa Cikaret, Ciamis",icon:"🏘️",
+       desc:"Program Kampung Iklim (ProKlim) Rp 2,4 miliar berjalan 2 tahun. Laporan resmi vs realita lapangan berbeda.",
+       konteks:"Anda adalah tim Evaluator Kebijakan dari LSM independen. Anda mendapat akses dokumen ProKlim Desa Cikaret: tujuan, data, anggaran, dan laporan keberhasilan. Namun 5 warga bercerita berbeda.",
+       fokus:"Indikator Checking Konsistensi: mahasiswa MEMERIKSA apakah tujuan kebijakan didukung data memadai, sasaran jelas, dan prosedur koheren. Cari inkonsistensi internal dokumen. Sajikan kutipan dokumen dalam format [BUKTI] kode|teks."},
+      {id:"Ch1b",ind:"Ch1",judul:"Kebijakan Wisata Tanpa Kajian",lokasi:"Pangandaran",icon:"🌴",
+       desc:"Kebijakan penataan kawasan wisata dibuat tanpa kajian daya dukung. Tujuan konservasi bertabrakan dengan pembangunan fasilitas besar.",
+       konteks:"Anda mengevaluasi dokumen kebijakan penataan wisata Pangandaran. Kebijakan mengklaim mendukung konservasi, tetapi isinya mendorong pembangunan resort besar tanpa kajian lingkungan.",
+       fokus:"Indikator Checking Konsistensi: periksa kesesuaian antara tujuan (konservasi) dengan instrumen kebijakan (pembangunan masif). Temukan kontradiksi internal fundamental melalui bukti dokumen."},
+      {id:"Ch2a",ind:"Ch2",judul:"Sosialisasi Tanpa Perubahan",lokasi:"Banjar",icon:"📢",
+       desc:"Program kebersihan diklaim berhasil karena jumlah sosialisasi meningkat. Tapi perilaku warga tidak berubah.",
+       konteks:"Anda memeriksa laporan keberhasilan program kebersihan di Banjar. Pemerintah bangga: 24 kali sosialisasi dilakukan. Tapi evaluasi lapangan menunjukkan perilaku warga tidak berubah.",
+       fokus:"Indikator Checking Output vs Outcome: mahasiswa membedakan OUTPUT (aktivitas, sosialisasi) dari OUTCOME (perubahan perilaku, dampak nyata). Sajikan data yang mencampur output dan outcome."},
+      {id:"Ch2b",ind:"Ch2",judul:"Infrastruktur yang Tak Terpakai",lokasi:"Tasikmalaya",icon:"🏗️",
+       desc:"Pembangunan selesai tepat waktu dan sesuai anggaran. Tapi warga tidak menggunakannya.",
+       konteks:"Anda mengevaluasi program pembangunan infrastruktur sanitasi di Tasikmalaya: selesai tepat waktu, anggaran terserap 100%. Namun 6 bulan kemudian, fasilitas tidak digunakan warga.",
+       fokus:"Indikator Checking Output vs Outcome: pembangunan selesai (output) ≠ manfaat dirasakan warga (outcome). Sajikan laporan program vs realita lapangan dalam format [BUKTI] kode|teks."},
+      {id:"Cr1a",ind:"Cr1",judul:"Investasi yang Tidak Adil",lokasi:"Garut",icon:"🏭",
+       desc:"Investasi industri besar menjanjikan 500 lapangan kerja. Tapi distribusi manfaat dan risiko tidak merata.",
+       konteks:"Anda mengkritisi kebijakan investasi industri di Garut. Pemerintah merayakan 500 lapangan kerja baru. Namun warga lokal hanya dapat pekerjaan kasual berupah rendah sambil menanggung pencemaran.",
+       fokus:"Indikator Critiquing Kelayakan: nilai menggunakan 5 kriteria — relevansi, efektivitas, efisiensi, keberlanjutan, KEADILAN. Tekankan pada keadilan distribusi manfaat dan risiko antar kelompok."},
+      {id:"Cr1b",ind:"Cr1",judul:"Program yang Mengabaikan Budaya",lokasi:"Baduy, Lebak",icon:"🎋",
+       desc:"Program pemberdayaan dirancang pihak luar tanpa memahami nilai dan praktik budaya Baduy.",
+       konteks:"Anda mengkritisi program pemberdayaan masyarakat Baduy Luar yang dirancang tim ahli dari luar tanpa melibatkan tokoh adat. Program ditolak warga karena tidak relevan secara budaya.",
+       fokus:"Indikator Critiquing Kelayakan: nilai dari aspek RELEVANSI (sesuai konteks budaya?) dan sensitivitas budaya sebagai kriteria evaluasi yang sah dan penting."},
+    ]
+  },
+  {
+    id:"P7",num:"7",judul:"Strategi Intervensi Pembangunan",
+    subcpmk:"SubCPMK-3 · C5 Evaluasi",warna:"#5B3A78",warnaLt:"#EDE4F5",icon:"🏗️",
+    desc:"Latih kemampuan mengevaluasi derajat partisipasi warga (Tangga Arnstein), sensitivitas budaya Sunda dalam strategi, dan memilih pendekatan pemberdayaan yang paling memberdayakan.",
+    chips:["Tangga Arnstein","Budaya Sunda","Pemberdayaan"],
+    indMeta:{
+      Cr2:{nama:"Critiquing Partisipasi",w:"#5B3A78",xs:"#EDE4F5",desc:"Menilai derajat partisipasi warga (Arnstein)"},
+      Cr3:{nama:"Critiquing Budaya",w:"#7B4F2E",xs:"#F3E4DA",desc:"Menilai sensitivitas budaya Sunda dalam strategi"},
+      Cr4:{nama:"Critiquing Strategi",w:"#1E3A5F",xs:"#E4EBF5",desc:"Memilih strategi paling memberdayakan"},
+    },
+    teori:"Adi (2003), Friedmann (1992), Mudzakir (1986), Trecker (1948)",
+    kasus:[
+      {id:"Cr2a",ind:"Cr2",judul:"Warga Diundang, Bukan Dilibatkan",lokasi:"Pangandaran",icon:"🪑",
+       desc:"Program lingkungan menyebut dirinya 'partisipatif'. Warga diundang sosialisasi, tapi tidak pernah diajak merancang atau mengevaluasi.",
+       konteks:"Anda mengevaluasi program pengelolaan sampah berbasis komunitas di Pangandaran. Dokumen resmi menyebut 'pendekatan partisipatif'. Tapi observasi lapangan menunjukkan warga hanya hadir di sosialisasi.",
+       fokus:"Indikator Critiquing Partisipasi: gunakan TANGGA PARTISIPASI ARNSTEIN (tokenisme vs partisipasi substantif). Nilai apakah warga punya kuasa nyata atau hanya hadir tanpa pengaruh. Sajikan data lapangan yang memancing analisis."},
+      {id:"Cr2b",ind:"Cr2",judul:"Tiga Program, Tiga Cerita",lokasi:"Pangandaran",icon:"🧩",
+       desc:"Tiga program intervensi berjalan paralel di komunitas nelayan yang sama dengan derajat keterlibatan warga yang sangat berbeda.",
+       konteks:"Anda membandingkan tiga pendekatan intervensi di komunitas nelayan Pangandaran: Pemda (top-down), LSM (fasilitasi), dan inisiatif warga (gotong royong organik).",
+       fokus:"Indikator Critiquing Partisipasi: bandingkan posisi ketiga program di tangga Arnstein. Identifikasi mana yang paling memberi kuasa nyata kepada warga. Sajikan profil ketiga program dalam format [BUKTI] kode|teks."},
+      {id:"Cr3a",ind:"Cr3",judul:"Program Menabrak Adat",lokasi:"Kampung Naga, Tasikmalaya",icon:"🏡",
+       desc:"Program sanitasi modern dipaksakan di komunitas adat yang punya sistem air tradisional yang bekerja baik selama ratusan tahun.",
+       konteks:"Anda mengevaluasi program sanitasi yang dipaksakan di komunitas adat Kampung Naga. Tim program menyebut sistem adat 'tidak higienis'. Warga menolak. Kearifan lokal dipinggirkan.",
+       fokus:"Indikator Critiquing Budaya: nilai apakah program MENGHARGAI NILAI LOKAL (gotong royong, harmoni dengan alam, kearifan leluhur) atau justru menganggapnya sebagai hambatan. Sajikan kutipan dokumen dan wawancara warga."},
+      {id:"Cr3b",ind:"Cr3",judul:"Gotong Royong yang Diformalkan",lokasi:"Garut",icon:"🤝",
+       desc:"Pemerintah desa mencoba 'menghidupkan kembali gotong royong' dengan jadwal wajib dan sanksi. Hasilnya justru melemahkan semangat kebersamaan.",
+       konteks:"Anda mengevaluasi program formalisasi gotong royong di Garut. Pemerintah bermaksud baik, tapi dengan cara dijadikan kewajiban formal dan berhadiah, makna gotong royong justru hilang.",
+       fokus:"Indikator Critiquing Budaya: evaluasi apakah pendekatan intervensi MEMAHAMI bahwa gotong royong adalah nilai budaya yang hidup dari dalam, bukan aturan dari luar yang dipaksakan."},
+      {id:"Cr4a",ind:"Cr4",judul:"Siapa yang Paling Memberdayakan?",lokasi:"Ciamis",icon:"⚡",
+       desc:"Tiga strategi pemberdayaan ditawarkan untuk komunitas petani yang kehilangan lahan. Evaluasi mana yang paling memberdayakan.",
+       konteks:"Anda merancang rekomendasi strategi untuk komunitas petani di Ciamis yang kehilangan lahan akibat alih fungsi. Ada tiga opsi dari lembaga berbeda dengan kelebihan-kekurangan masing-masing.",
+       fokus:"Indikator Critiquing Strategi: evaluasi ketiga strategi menggunakan kerangka: partisipasi warga, sensitivitas budaya Sunda, keberlanjutan, kemandirian, dan potensi dampak jangka panjang. Sajikan profil ketiga strategi."},
+      {id:"Cr4b",ind:"Cr4",judul:"Intervensi Pasca-Bencana",lokasi:"Tasikmalaya",icon:"🌱",
+       desc:"Setelah banjir besar, tiga pendekatan pemulihan ditawarkan: bantuan langsung cepat, pelatihan keterampilan, atau pendampingan komunitas jangka panjang.",
+       konteks:"Anda mengevaluasi strategi pemulihan pasca-bencana banjir di Tasikmalaya. Ketiga pendekatan sama-sama bermaksud 'memulihkan masyarakat' tapi punya filosofi dan dampak yang sangat berbeda.",
+       fokus:"Indikator Critiquing Strategi: evaluasi mana yang paling memberdayakan jangka panjang. Kaitkan dengan konsep pemberdayaan menurut Adi (2003) dan Friedmann (1992)."},
+    ]
+  }
+];
+
+const STEPS = ["Investigasi","Pendalaman 1","Pendalaman 2","Pendalaman 3","Penilaian"];
+const TOTAL_PD = 3;
+
+let STATE = {
+  pt:null, kasus:null, hist:[], bukti:[], pilihBukti:{},
+  tantangan:null, jawaban:"", putaran:0,
+  loading:false, tahap:"intro", riwayat:{}
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+//  API
+// ════════════════════════════════════════════════════════════════════════════
+async function callClaude(system, messages){
+  const res = await fetch("/api/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1100,system,messages})
+  });
+  if(!res.ok) throw new Error("API error: "+res.status);
+  const d = await res.json();
+  return d.content?.map(b=>b.text||"").join("")||"";
+}
+
+function buildSystem(pt, k){
+  const isEval = pt.id==="P6"||pt.id==="P7";
+  return `Kamu adalah Game Master untuk "Immersive Ecocultural Game" — media pembelajaran AIGC, mata kuliah Masalah Sosial dan Pembangunan, S1 Pendidikan Masyarakat, Universitas Siliwangi.
+
+PERTEMUAN ${pt.num} — ${pt.judul} (${pt.subcpmk})
+STUDI KASUS: "${k.judul}" — ${k.lokasi}
+KONTEKS ROLEPLAY: ${k.konteks}
+INDIKATOR: ${k.ind} — ${k.fokus}
+LANDASAN TEORI: ${pt.teori}
+
+═══ FILOSOFI: SCAFFOLDING BERTAHAP ═══
+UTAMAKAN pembimbingan. DILARANG memberi skor sebelum putaran pendalaman ke-3 selesai.
+Mahasiswa harus melewati 3 putaran pendalaman dulu. Skor hanya di akhir, menilai keseluruhan perkembangan.
+
+═══ ALUR ═══
+TAHAP 1 — saat menerima "MULAI":
+• Narasi pembuka immersive 2-3 paragraf, kaya detail lapangan Priangan Timur & nilai budaya Sunda.
+• Sajikan data/bukti lapangan sesuai instruksi indikator di atas.
+• Format bukti: [BUKTI] kode|teks (satu per baris, kode B1 dst.) — hanya jika relevan dengan indikator D atau membantu visualisasi.
+• Akhiri dengan tantangan roleplay menguji indikator ${k.ind}: [TANTANGAN] teks pertanyaan.
+
+TAHAP 2 — SCAFFOLDING putaran 1, 2, 3 (setiap kali mahasiswa kirim jawaban sebelum NILAI_AKHIR):
+DILARANG memberi skor. Berikan persis:
+[APRESIASI] 1-2 kalimat mengakui bagian yang sudah tepat — sebut spesifik apa yang benar.
+[PENGUATAN] 1 paragraf: luruskan/perkaya konsep dengan lembut, sisipkan konsep akademis (${pt.teori}), tidak menghakimi.
+[TANTANGAN] satu pertanyaan pendalaman satu level lebih dalam.
+• Putaran 1: dalami jawaban awal. • Putaran 2: dorong membandingkan/menghubungkan. • Putaran 3: dorong menyimpulkan & kaitkan budaya Sunda atau implikasi praktis.
+
+TAHAP 3 — saat menerima "NILAI_AKHIR" (setelah jawaban pendalaman ke-3):
+Nilai KESELURUHAN PERKEMBANGAN. Gunakan persis:
+[SKOR] angka 0-100|label (Pemula/Berkembang/Cakap/Mahir)
+[NARASI] 1 paragraf: konsekuensi di lapangan jika analisis/evaluasi mereka dijadikan dasar tindakan. Naratif, dalam dunia roleplay.
+[SARAN] 2-3 poin saran konkret. Tiap poin diawali "-".
+
+ATURAN: Bahasa Indonesia akademis tapi hangat & naratif. Jangan beri jawaban model langsung. Hargai usaha mahasiswa. Selalu kaitkan dengan konteks Priangan Timur dan nilai budaya Sunda.`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PARSERS
+// ════════════════════════════════════════════════════════════════════════════
+const parseBukti=t=>{const out=[],re=/\[BUKTI\]\s*([^\|]+)\|(.+)/g;let m;while((m=re.exec(t))!==null)out.push({kode:m[1].trim(),teks:m[2].trim()});return out;};
+const parseTantangan=t=>{const m=t.match(/\[TANTANGAN\]\s*(.+?)(?=\n\[|$)/s);return m?m[1].trim():null;};
+const parseSkor=t=>{const m=t.match(/\[SKOR\]\s*(\d+)\s*\|?\s*(.+?)(?=\n|$)/);return m?{nilai:+m[1],label:m[2].trim()}:null;};
+const parseNarasi=t=>{const m=t.match(/\[NARASI\]\s*(.+?)(?=\n\[|$)/s);return m?m[1].trim():null;};
+const parseSaran=t=>{const m=t.match(/\[SARAN\]\s*(.+?)$/s);if(!m)return[];return m[1].split("\n").map(s=>s.replace(/^[-•]\s*/,"").trim()).filter(Boolean);};
+const parseApresiasi=t=>{const m=t.match(/\[APRESIASI\]\s*(.+?)(?=\n\[|$)/s);return m?m[1].trim():null;};
+const parsePenguatan=t=>{const m=t.match(/\[PENGUATAN\]\s*(.+?)(?=\n\[|$)/s);return m?m[1].trim():null;};
+const cleanText=t=>t.replace(/\[BUKTI\][^\n]+/g,"").replace(/\[TANTANGAN\][^\n]*/gs,"").replace(/\[SKOR\][^\n]+/g,"").replace(/\[NARASI\][^\n]+/gs,"").replace(/\[SARAN\][^]*/gs,"").replace(/\[APRESIASI\][^\n]+/gs,"").replace(/\[PENGUATAN\][^\n]+/gs,"").trim().replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>").split(/\n{2,}/).map(p=>p.trim()).filter(Boolean).map(p=>`<p>${p.replace(/\n/g,"<br>")}</p>`).join("");
+
+// ════════════════════════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════════════════════════
+const W=id=>document.getElementById(id);
+const showScreen=name=>{document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));const s=W("sc-"+name);if(s)s.classList.add("on");};
+
+function addBlock(html){
+  const fi=W("g-feed-inner");
+  const d=document.createElement("div");d.className="rise";d.innerHTML=html;fi.appendChild(d);
+  setTimeout(()=>d.scrollIntoView({behavior:"smooth",block:"end"}),80);
+}
+
+function renderProgress(){
+  const pg=W("g-prog"),ps=W("prog-steps");if(!pg||!ps)return;
+  if(STATE.tahap==="intro"){pg.style.display="none";return;}
+  pg.style.display="";
+  const w=STATE.pt?.warna||"#3E5C3A";
+  ps.innerHTML=STEPS.map((s,i)=>{
+    const done=i<=STATE.putaran;
+    const cur=(i===STATE.putaran&&STATE.tahap!=="selesai")||(i===4&&STATE.tahap==="selesai");
+    return `<div class="prog-step"><div class="prog-fill" style="background:${done?w:"#E0DDD4"};opacity:${cur?1:done?.6:1}"></div><div class="prog-label mn" style="color:${cur?w:"var(--mist)"};font-weight:${cur?600:400}">${s}</div></div>`;
+  }).join("");
+}
+
+function renderBuktiItems(){
+  if(!STATE.bukti.length||STATE.putaran>0) return "";
+  const w=STATE.pt.warna, k=STATE.kasus, isDiff=k.ind.startsWith("D");
+  const hint=isDiff?"Ketuk tiap bukti untuk menandai: <b style='color:var(--clay)'>Penyebab</b> atau <b style='color:var(--mist)'>Gejala</b>. Ketuk lagi untuk menghapus.":"Telaah bukti-bukti berikut sebagai bahan analisis kelompok.";
+  const items=STATE.bukti.map(b=>{
+    const tag=STATE.pilihBukti[b.kode];
+    const bc=tag==="penyebab"?"var(--clay)":tag==="gejala"?"var(--mist)":"rgba(34,37,31,.1)";
+    const bg=tag==="penyebab"?"rgba(166,90,58,.07)":tag==="gejala"?"rgba(139,142,132,.07)":"var(--paper)";
+    const tagEl=tag?`<span class="bukti-tag" style="color:${bc}">${tag}</span>`:"";
+    const click=isDiff?`onclick="cycleBukti('${b.kode}')" style="cursor:pointer;background:${bg};border-color:${bc}"`:`style="background:${bg};border-color:${bc}"`;
+    return `<div class="bukti-item" ${click}><span class="bukti-kode" style="background:${w}">${b.kode}</span><span class="bukti-teks">${b.teks}</span>${tagEl}</div>`;
+  }).join("");
+  return `<div class="bukti-wrap"><div class="mn" style="font-size:9.5px;letter-spacing:.8px;color:${w};margin-bottom:4px">🗂️ BUKTI LAPANGAN</div><p style="font-size:11px;color:var(--mist);margin-bottom:9px;line-height:1.5">${hint}</p>${items}</div>`;
+}
+
+function renderInput(){
+  const ia=W("g-input-area");if(!ia)return;
+  renderProgress();
+  if(STATE.loading||STATE.tahap==="selesai"||STATE.tahap==="intro"){ia.innerHTML="";return;}
+  const w=STATE.pt.warna, atLast=STATE.putaran>=TOTAL_PD;
+  const jawLen=STATE.jawaban.trim().length, ok=jawLen>=20;
+  const hintTxt=STATE.putaran===0?"Diskusikan dalam kelompok, lalu tuliskan analisis kalian. Belum dinilai — Claude akan membimbing dulu.":atLast?"Ini jawaban pendalaman terakhir. Setelah ini Claude memberi penilaian keseluruhan.":"Bangun jawaban dari penguatan yang baru diberikan. Belum dinilai.";
+  const tantanganHtml=STATE.tantangan?`<div class="tantangan-box" style="background:${w}14;border-color:${w}44"><div class="mn" style="font-size:9.5px;letter-spacing:.8px;color:${w};margin-bottom:5px">${STATE.putaran===0?"🎯 TANTANGAN ROLEPLAY":`🔎 PERTANYAAN PENDALAMAN ${STATE.putaran}/${TOTAL_PD}`}</div><div style="font-size:13px;line-height:1.7">${STATE.tantangan}</div></div>`:"";
+
+  ia.innerHTML=`${STATE.putaran===0?renderBuktiItems():""}${tantanganHtml}
+  <div class="input-wrap">
+    <div class="input-title">✍️ ${STATE.putaran===0?"Tulis Respons Analisis Kelompok":"Jawaban Pendalaman "+STATE.putaran}</div>
+    <div class="input-hint">${hintTxt}</div>
+    <textarea class="ans" id="ans-ta" rows="5" placeholder="${STATE.putaran===0?"Tuliskan analisis kelompok berdasarkan data/bukti di atas...":"Tuliskan jawaban kelompok atas pertanyaan pendalaman..."}">${STATE.jawaban}</textarea>
+    <div class="input-footer">
+      <span class="char-counter mn" id="char-ctr" style="color:${ok?"var(--moss)":"var(--rose)"}">${ok?`✓ ${jawLen} karakter`:`Minimal 20 karakter (${jawLen})`}</span>
+      <button class="send-btn" id="send-btn" style="background:${ok?w:"#D9D6CB"};color:${ok?"#fff":"var(--mist)"};${ok?"":"cursor:not-allowed"}">${atLast?"Kirim & Minta Penilaian →":"Kirim ke Claude AI →"}</button>
+    </div>
+  </div>`;
+
+  const ta=W("ans-ta"),sb=W("send-btn");
+  if(ta) ta.addEventListener("input",e=>{
+    STATE.jawaban=e.target.value;
+    const l=e.target.value.trim().length,ok2=l>=20;
+    const cc=W("char-ctr");if(cc){cc.style.color=ok2?"var(--moss)":"var(--rose)";cc.textContent=ok2?`✓ ${l} karakter`:`Minimal 20 karakter (${l})`;}
+    if(sb){sb.style.background=ok2?w:"#D9D6CB";sb.style.color=ok2?"#fff":"var(--mist)";sb.style.cursor=ok2?"pointer":"not-allowed";}
+  });
+  if(sb) sb.addEventListener("click",()=>{if(STATE.jawaban.trim().length>=20)kirimJawaban();});
+}
+
+function loadingOn(){
+  STATE.loading=true;renderInput();
+  const w=STATE.pt?.warna||"#3E5C3A";
+  addBlock(`<div class="loading-dots" id="ld-ind">${[0,1,2].map(i=>`<div class="dot" style="background:${w};animation:pulse 1.1s ${i*.18}s infinite"></div>`).join("")}<span style="font-size:12px;color:var(--mist);margin-left:6px;font-style:italic">Claude AI sedang bekerja...</span></div>`);
+}
+function loadingOff(){
+  STATE.loading=false;
+  const ld=W("ld-ind");if(ld&&ld.parentElement)ld.parentElement.remove();
+  renderInput();
+}
+
+window.cycleBukti=function(kode){
+  const cur=STATE.pilihBukti[kode];
+  const next=cur===undefined?"penyebab":cur==="penyebab"?"gejala":undefined;
+  if(next===undefined)delete STATE.pilihBukti[kode];else STATE.pilihBukti[kode]=next;
+  renderInput();
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+//  GAME LOGIC
+// ════════════════════════════════════════════════════════════════════════════
+async function mulaiGame(pt, k){
+  STATE={...STATE,pt,kasus:k,hist:[],bukti:[],pilihBukti:{},tantangan:null,jawaban:"",putaran:0,loading:false,tahap:"intro"};
+  W("g-feed-inner").innerHTML="";W("g-input-area").innerHTML="";
+  const w=pt.warna;
+  W("g-topbar").style.background=w;
+  W("g-title").textContent=k.judul;
+  W("g-sub").textContent=`${k.ind} · ${k.lokasi} · ${pt.judul}`;
+  W("g-icon").textContent=k.icon;
+  W("g-ind-banner").style.background=pt.warnaLt;
+  W("g-ind-banner").style.borderBottom=`1px solid ${w}22`;
+  const im=pt.indMeta[k.ind]||{nama:k.ind,desc:""};
+  W("g-ind-text").innerHTML=`<span style="font-weight:600;color:${w}">Indikator:</span> ${im.nama} — ${im.desc}`;
+  W("g-prog").style.display="none";
+  showScreen("game");
+
+  loadingOn();
+  const h=[{role:"user",content:"MULAI"}];
+  try {
+    const out=await callClaude(buildSystem(pt,k),h);
+    STATE.bukti=parseBukti(out);STATE.tantangan=parseTantangan(out);
+    STATE.hist=[...h,{role:"assistant",content:out}];
+    addBlock(`<div class="bubble-ai"><div class="bubble-ai-lbl mn" style="color:${w}">🔍 BERKAS INVESTIGASI · PERTEMUAN ${pt.num}</div><div class="bubble-ai-text">${cleanText(out)}</div></div>`);
+    STATE.tahap="menjawab";
+  } catch(e){
+    addBlock(`<div class="err-box">⚠️ Koneksi ke Claude AI gagal: ${e.message}. Pastikan API key valid dan koneksi internet stabil.</div>`);
+  }
+  loadingOff();
+}
+
+async function kirimJawaban(){
+  if(STATE.loading||STATE.jawaban.trim().length<20)return;
+  const w=STATE.pt.warna, atLast=STATE.putaran>=TOTAL_PD;
+  let klasTeks="";
+  if(STATE.kasus.ind.startsWith("D")&&STATE.putaran===0&&Object.keys(STATE.pilihBukti).length){
+    const pen=STATE.bukti.filter(b=>STATE.pilihBukti[b.kode]==="penyebab").map(b=>b.kode);
+    const gej=STATE.bukti.filter(b=>STATE.pilihBukti[b.kode]==="gejala").map(b=>b.kode);
+    klasTeks=`\nKlasifikasi bukti — Penyebab: ${pen.join(",")||"-"} | Gejala: ${gej.join(",")||"-"}`;
+  }
+  const lbl=STATE.putaran===0?"JAWABAN AWAL":`JAWABAN PENDALAMAN ${STATE.putaran}`;
+  addBlock(`<div class="bubble-user"><div class="bubble-user-inner" style="background:${w}"><div class="bubble-user-lbl mn">${lbl} KELOMPOK</div>${STATE.jawaban}${klasTeks?`\n\n📌 ${klasTeks.trim()}`:""}</div></div>`);
+  const userMsg=atLast?`JAWABAN PENDALAMAN ${STATE.putaran} KELOMPOK:\n${STATE.jawaban}${klasTeks}\n\nNILAI_AKHIR`:STATE.putaran===0?`JAWABAN ROLEPLAY KELOMPOK:\n${STATE.jawaban}${klasTeks}`:`JAWABAN PENDALAMAN ${STATE.putaran} KELOMPOK:\n${STATE.jawaban}`;
+  STATE.jawaban="";
+  const h=[...STATE.hist,{role:"user",content:userMsg}];
+  loadingOn();
+  try {
+    const out=await callClaude(buildSystem(STATE.pt,STATE.kasus),h);
+    STATE.hist=[...h,{role:"assistant",content:out}];
+    if(atLast){
+      const skor=parseSkor(out),narasi=parseNarasi(out),saran=parseSaran(out);
+      const pct=skor?skor.nilai:0;
+      addBlock(`<div class="final-wrap">
+        <div class="final-skor" style="background:linear-gradient(135deg,${w},${w}cc)">
+          <div class="mn" style="font-size:9.5px;opacity:.7;letter-spacing:.8px;margin-bottom:7px">PENILAIAN AKHIR · SETELAH 3 PUTARAN PENDALAMAN</div>
+          <div style="display:flex;align-items:baseline;gap:12px">
+            <div class="fr" style="font-size:42px;font-weight:600;line-height:1">${skor?skor.nilai:"—"}</div>
+            <div><div style="font-size:13px;font-weight:600">${skor?skor.label:""}</div><div style="font-size:11px;opacity:.65">dari 100 · indikator ${STATE.kasus.ind}</div></div>
+          </div>
+          <div class="final-bar"><div class="final-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+        ${narasi?`<div class="final-narasi"><div class="mn" style="font-size:9.5px;letter-spacing:.8px;color:${w};margin-bottom:7px">📖 KONSEKUENSI DI LAPANGAN</div><div style="font-size:13px;line-height:1.8;color:var(--ink-soft)">${narasi}</div></div>`:""}
+        ${saran.length?`<div class="final-saran"><div class="mn" style="font-size:9.5px;letter-spacing:.8px;color:var(--gold);margin-bottom:8px">💡 SARAN MENAJAMKAN KEMAMPUAN</div>${saran.map((s,i)=>`<div class="saran-row"><span style="color:var(--gold);font-weight:700;flex-shrink:0">${i+1}.</span><span>${s}</span></div>`).join("")}</div>`:""}
+      </div>`);
+      if(skor)STATE.riwayat[STATE.kasus.id]=Math.max(STATE.riwayat[STATE.kasus.id]||0,skor.nilai);
+      STATE.tahap="selesai";
+      addBlock(`<div class="selesai-box"><div style="font-size:14px;font-weight:600;margin-bottom:4px">Studi kasus selesai 🎉</div><div style="font-size:12px;color:var(--mist);margin-bottom:12px;line-height:1.55">Kelompok telah melewati investigasi awal dan 3 putaran pendalaman. Pilih studi kasus lain untuk memperdalam kemampuan.</div><button onclick="backToKasus()" style="padding:10px 18px;border-radius:8px;border:none;font-size:12.5px;font-weight:600;color:#fff;background:${w}">📚 Pilih Studi Kasus Lain →</button></div>`);
+    } else {
+      const apr=parseApresiasi(out),pen=parsePenguatan(out),t=parseTantangan(out);
+      STATE.tantangan=t;STATE.putaran++;
+      addBlock(`<div class="scaf-wrap"><div class="scaf-hdr"><span class="scaf-badge" style="background:${w}">PENGUATAN ${STATE.putaran}/${TOTAL_PD}</span><span class="scaf-note">Belum dinilai — fokus memahami dulu</span></div>${apr?`<div class="apr-box"><div class="apr-lbl mn">👏 YANG SUDAH TEPAT</div><div class="apr-text">${apr}</div></div>`:""}${pen?`<div class="pen-box" style="border-radius:${apr?"0 0 12px 12px":"12px"}"><div class="pen-lbl mn" style="color:${w}">🧠 PENGUATAN KONSEP</div><div class="pen-text">${pen}</div></div>`:""}</div>`);
+    }
+  } catch(e){
+    addBlock(`<div class="err-box">⚠️ Koneksi gagal: ${e.message}. Coba lagi.</div>`);
+  }
+  loadingOff();renderProgress();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════════════════════════
+function goLanding(){STATE.pt=null;STATE.kasus=null;showScreen("landing");}
+function backToKasus(){goKasus(STATE.pt);}
+window.backToKasus=backToKasus;
+
+// Auto-init: tidak perlu API key input karena sudah di server
+(function(){
+  showScreen("landing");
+  initLanding();
+})();
+
+function goKasus(pt){
+  STATE.pt=pt;
+  W("kl-pt-info").innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span style="font-size:24px">${pt.icon}</span><div><div class="fr" style="font-size:20px;font-weight:600;color:${pt.warna}">${pt.judul}</div><div class="mn" style="font-size:10px;color:var(--mist)">${pt.subcpmk}</div></div></div><p style="font-size:13px;color:var(--ink-soft);line-height:1.6;max-width:600px;margin-bottom:4px">${pt.desc}</p>`;
+  const body=W("kl-body");body.innerHTML="";
+  const grp={};pt.kasus.forEach(k=>{if(!grp[k.ind])grp[k.ind]=[];grp[k.ind].push(k);});
+  Object.entries(grp).forEach(([ind,klist])=>{
+    const m=pt.indMeta[ind]||{nama:ind,w:pt.warna,xs:pt.warnaLt,desc:""};
+    const sec=document.createElement("div");sec.style.marginBottom="22px";
+    sec.innerHTML=`<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px"><div style="width:28px;height:28px;border-radius:7px;background:${m.w};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">${ind.slice(0,2)}</div><div><div class="fr" style="font-size:15px;font-weight:600">${m.nama}</div><div style="font-size:11px;color:var(--mist)">${m.desc}</div></div></div><div class="kasus-grid">${klist.map(k=>{const done=STATE.riwayat[k.id];return`<div class="kasus-card" onclick="mulaiGame(STATE.pt,STATE.pt.kasus.find(c=>c.id==='${k.id}'))" onmouseover="this.style.borderColor='${m.w}';this.style.boxShadow='0 6px 20px ${m.w}22'" onmouseout="this.style.borderColor='rgba(34,37,31,.08)';this.style.boxShadow='none'"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-size:26px">${k.icon}</span>${done?`<span class="done-badge mn" style="background:${m.xs};color:${m.w}">✓ ${done}</span>`:""}</div><div class="kasus-title fr" style="color:${m.w}">${k.judul}</div><div class="kasus-loc mn" style="color:var(--mist)">📍 ${k.lokasi}</div><div class="kasus-desc">${k.desc}</div></div>`;}).join("")}</div>`;
+    body.appendChild(sec);
+  });
+  showScreen("kasus");
+}
+
+function initLanding(){
+  const pg=W("pt-grid");pg.innerHTML="";
+  PERTEMUAN.forEach(pt=>{
+    const c=document.createElement("div");c.className="pt-card";
+    c.onmouseover=()=>{c.style.borderColor=pt.warna;c.style.boxShadow=`0 10px 28px ${pt.warna}22`;};
+    c.onmouseout=()=>{c.style.borderColor="rgba(34,37,31,.08)";c.style.boxShadow="none";};
+    c.onclick=()=>goKasus(pt);
+    c.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:28px">${pt.icon}</span><div><div class="pt-badge" style="background:${pt.warnaLt};color:${pt.warna}">Pertemuan ${pt.num}</div><div class="fr pt-name" style="color:${pt.warna}">${pt.judul}</div></div></div><p class="pt-desc">${pt.desc}</p><div class="pt-chips">${pt.chips.map(chip=>`<span class="pt-chip" style="background:${pt.warnaLt};color:${pt.warna}">${chip}</span>`).join("")}</div>`;
+    pg.appendChild(c);
+  });
+}
+</script>
+</body>
+</html>
